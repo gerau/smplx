@@ -100,7 +100,7 @@ fn main() {
 
         let file_name = file_name
             .to_str()
-            .ok_or_else(|| InitError::NonUnicodeName(format!("{}", file_name.display())))?;
+            .ok_or_else(|| InitError::NonUnicodeName(format!("{}", file_name.to_string_lossy())))?;
 
         Ok(format!("simplex_{file_name}"))
     }

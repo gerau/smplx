@@ -154,9 +154,9 @@ impl SimfContent {
     pub fn extract_content_from_path(path: &PathBuf) -> std::io::Result<SimfContent> {
         let contract_name = {
             let name = path
-                .file_prefix()
+                .file_stem()
                 .ok_or(std::io::Error::other(format!(
-                    "No file prefix in file: '{}'",
+                    "No file stem in file: '{}'",
                     path.display()
                 )))?
                 .to_string_lossy();

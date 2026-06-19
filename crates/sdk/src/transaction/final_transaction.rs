@@ -341,7 +341,7 @@ impl FinalTransaction {
             .filter(|output| output.asset == network.policy_asset())
             .fold(0_u64, |acc, output| acc + output.amount);
 
-        available_amount.cast_signed() - consumed_amount.cast_signed()
+        available_amount as i64 - consumed_amount as i64
     }
 
     /// Computes the transaction fee based on the provided weight and fee rate.

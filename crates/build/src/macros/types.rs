@@ -151,9 +151,7 @@ impl RustType {
         prev_type: Option<RustTypeContext>,
     ) -> proc_macro2::TokenStream {
         let deref = {
-            if let Some(type_context) = prev_type
-                && type_context.is_deref_needed()
-            {
+            if prev_type.is_some_and(|type_context| type_context.is_deref_needed()) {
                 quote! { * }
             } else {
                 quote! {}

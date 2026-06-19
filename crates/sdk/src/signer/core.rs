@@ -198,8 +198,8 @@ impl Signer {
         for utxo in signer_utxos {
             let policy_amount_delta = fee_tx.calculate_fee_delta(&self.network);
 
-            if policy_amount_delta >= curr_fee.cast_signed() {
-                match self.estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta.cast_unsigned())? {
+            if policy_amount_delta >= curr_fee as i64 {
+                match self.estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta as u64)? {
                     Estimate::Success(tx, fee) => return Ok((tx, fee)),
                     Estimate::Failure(required_fee) => curr_fee = required_fee,
                 }
@@ -211,8 +211,8 @@ impl Signer {
         // need to try one more time after the loop
         let policy_amount_delta = fee_tx.calculate_fee_delta(&self.network);
 
-        if policy_amount_delta >= curr_fee.cast_signed() {
-            match self.estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta.cast_unsigned())? {
+        if policy_amount_delta >= curr_fee as i64 {
+            match self.estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta as u64)? {
                 Estimate::Success(tx, fee) => return Ok((tx, fee)),
                 Estimate::Failure(required_fee) => curr_fee = required_fee,
             }
@@ -234,14 +234,14 @@ impl Signer {
     ) -> Result<(Transaction, u64), SignerError> {
         let policy_amount_delta = tx.calculate_fee_delta(&self.network);
 
-        if policy_amount_delta < MIN_FEE.cast_signed() {
+        if policy_amount_delta < MIN_FEE as i64 {
             return Err(SignerError::DustAmount(policy_amount_delta));
         }
 
         let fee_rate = self.provider.fetch_fee_rate(target_blocks)?;
 
         // policy_amount_delta will be > 0
-        match self.estimate_tx(tx.clone(), fee_rate, policy_amount_delta.cast_unsigned())? {
+        match self.estimate_tx(tx.clone(), fee_rate, policy_amount_delta as u64)? {
             Estimate::Success(tx, fee) => Ok((tx, fee)),
             Estimate::Failure(required_fee) => Err(SignerError::NotEnoughFeeAmount(policy_amount_delta, required_fee)),
         }
