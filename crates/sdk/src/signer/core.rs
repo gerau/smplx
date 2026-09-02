@@ -213,6 +213,7 @@ impl Signer {
     /// # Errors
     /// Returns a `SignerError` if the wallet contains insufficient funds to satisfy output values and target fee rates.
     #[cfg(feature = "provider")]
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn finalize(&self, tx: &FinalTransaction) -> Result<(Transaction, u64), SignerError> {
         let mut signer_utxos = self.get_utxos_asset(self.network.policy_asset())?;
         let mut set = HashSet::new();
@@ -234,7 +235,7 @@ impl Signer {
         let fee_rate = self.get_provider()?.fetch_fee_rate(1)?;
 
         let try_estimate = |fee_tx: &FinalTransaction, policy_amount_delta: i64, curr_fee: &mut u64| match self
-            .estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta.cast_unsigned())
+            .estimate_tx(fee_tx.clone(), fee_rate, policy_amount_delta as u64)
         {
             Ok(Estimate::Success(tx, fee)) => {
                 ProgramLogger::flush_logs();
@@ -253,10 +254,10 @@ impl Signer {
         for utxo in signer_utxos {
             let policy_amount_delta = fee_tx.calculate_fee_delta(&self.network);
 
-            if policy_amount_delta >= curr_fee.cast_signed()
-                && let Some(result) = try_estimate(&fee_tx, policy_amount_delta, &mut curr_fee)?
-            {
-                return Ok(result);
+            if policy_amount_delta >= curr_fee as i64 {
+                if let Some(result) = try_estimate(&fee_tx, policy_amount_delta, &mut curr_fee)? {
+                    return Ok(result);
+                }
             }
 
             // IMPORTANT: must be added to the end of the transaction.
@@ -267,10 +268,10 @@ impl Signer {
         // need to try one more time after the loop
         let policy_amount_delta = fee_tx.calculate_fee_delta(&self.network);
 
-        if policy_amount_delta >= curr_fee.cast_signed()
-            && let Some(result) = try_estimate(&fee_tx, policy_amount_delta, &mut curr_fee)?
-        {
-            return Ok(result);
+        if policy_amount_delta >= curr_fee as i64 {
+            if let Some(result) = try_estimate(&fee_tx, policy_amount_delta, &mut curr_fee)? {
+                return Ok(result);
+            }
         }
 
         Err(SignerError::NotEnoughFunds(curr_fee))
@@ -282,15 +283,16 @@ impl Signer {
     /// # Errors
     /// Returns a `SignerError` if the assembled inputs do not meet dust limits or fail to cover the
     /// dynamically estimated required fee.
+    #[allow(clippy::cast_possible_wrap, clippy::cast_sign_loss)]
     pub fn finalize_strict(&self, tx: &FinalTransaction, fee_rate: f32) -> Result<(Transaction, u64), SignerError> {
         let policy_amount_delta = tx.calculate_fee_delta(&self.network);
 
-        if policy_amount_delta < MIN_FEE.cast_signed() {
+        if policy_amount_delta < MIN_FEE as i64 {
             return Err(SignerError::DustAmount(policy_amount_delta));
         }
 
         // policy_amount_delta will be > 0
-        match self.estimate_tx(tx.clone(), fee_rate, policy_amount_delta.cast_unsigned())? {
+        match self.estimate_tx(tx.clone(), fee_rate, policy_amount_delta as u64)? {
             Estimate::Success(tx, fee) => {
                 ProgramLogger::flush_logs();
                 Ok((tx, fee))

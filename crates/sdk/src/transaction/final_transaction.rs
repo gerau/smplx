@@ -358,6 +358,7 @@ impl FinalTransaction {
     ///
     /// # Panics
     /// Function will panic if the asset doesn't be unblinded correctly, and PST input asset and amount is confidential.
+    #[allow(clippy::cast_possible_wrap)]
     #[must_use]
     pub fn calculate_fee_delta(&self, network: &SimplicityNetwork) -> i64 {
         let mut available_amount = 0;
@@ -385,7 +386,7 @@ impl FinalTransaction {
             .filter(|output| output.asset == network.policy_asset())
             .fold(0_u64, |acc, output| acc + output.amount);
 
-        available_amount.cast_signed() - consumed_amount.cast_signed()
+        available_amount as i64 - consumed_amount as i64
     }
 
     /// Computes the transaction fee based on the provided weight and fee rate.
